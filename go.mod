@@ -1,4 +1,4 @@
-module jeu-train
+module github.com/paul-quique/flappy-bird
 
 go 1.18
 
