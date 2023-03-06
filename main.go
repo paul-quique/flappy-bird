@@ -1,17 +1,16 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"image"
 	"image/color"
 	_ "image/png"
 	"log"
 	"math/rand"
-	"os"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/audio"
-	"github.com/hajimehoshi/ebiten/audio/wav"
 	"github.com/hajimehoshi/ebiten/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text"
@@ -19,19 +18,15 @@ import (
 	"golang.org/x/image/font/opentype"
 )
 
+//go:embed res/*
+var fsys embed.FS
+
 func init() {
-	table = LoadPNG("table.png")
-	ball = LoadPNG("ball.png")
-	building = LoadPNG("building.png")
-	howtoplay = LoadPNG("howtoplay.png")
-	ctx, err := audio.NewContext(44100)
-	if err != nil {
-		panic(err)
-	}
-	player, err = newSound(ctx, "jump.wav")
-	if err != nil {
-		panic(err)
-	}
+	table = LoadPNG("res/table.png")
+	ball = LoadPNG("res/ball.png")
+	building = LoadPNG("res/building.png")
+	howtoplay = LoadPNG("res/howtoplay.png")
+
 	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
 	if err != nil {
 		log.Fatal(err)
@@ -67,7 +62,6 @@ func restart() {
 	rand.Seed(time.Now().Unix())
 	distance = 250
 	score = 0
-	soundPlaying = false
 }
 
 type Building struct {
@@ -95,7 +89,6 @@ var lastX float64
 var score int
 var distance float64
 var needsRestart bool = true
-var soundPlaying bool
 
 func (g *Game) Update() error {
 	if ballColidding() {
@@ -115,20 +108,14 @@ func (g *Game) Update() error {
 			buildings = buildings[1:]
 			buildings = append(buildings, randomBuilding())
 		}
-		if ebiten.IsKeyPressed(ebiten.KeySpace) {
+		if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) || len(ebiten.TouchIDs()) != 0 {
 			speed = -10
-			if !soundPlaying {
-				soundPlaying = true
-				player.SetVolume(1)
-				player.Play()
-				soundPlaying = false
-			}
 		}
-	} else if ebiten.IsKeyPressed(ebiten.KeySpace) {
+	} else if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) || len(ebiten.TouchIDs()) != 0 {
 		paused = false
 	}
 	if needsRestart {
-		if ebiten.IsKeyPressed(ebiten.KeyR) {
+		if ebiten.IsKeyPressed(ebiten.KeyR) || len(ebiten.TouchIDs()) == 2 {
 			go restartAndWait()
 		}
 	}
@@ -181,7 +168,7 @@ func main() {
 }
 
 func LoadPNG(filename string) *ebiten.Image {
-	infile, err := os.Open(filename)
+	infile, err := fsys.Open(filename)
 	if err != nil {
 		panic(err)
 	}
@@ -225,23 +212,4 @@ func restartAndWait() {
 	restart()
 	time.Sleep(1 * time.Second)
 	needsRestart = true
-}
-
-func newSound(ctx *audio.Context, f string) (*audio.Player, error) {
-	file, err := os.Open(f)
-	if err != nil {
-		return nil, err
-	}
-
-	stream, err := wav.Decode(ctx, file)
-	if err != nil {
-		return nil, err
-	}
-
-	audioPlayer, err := audio.NewPlayer(ctx, stream)
-	if err != nil {
-		return nil, err
-	}
-
-	return audioPlayer, err
 }
