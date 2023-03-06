@@ -108,10 +108,10 @@ func (g *Game) Update() error {
 			buildings = buildings[1:]
 			buildings = append(buildings, randomBuilding())
 		}
-		if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) || len(ebiten.TouchIDs()) != 0 {
+		if ebiten.IsKeyPressed(ebiten.KeySpace) || len(ebiten.TouchIDs()) != 0 {
 			speed = -10
 		}
-	} else if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) || len(ebiten.TouchIDs()) != 0 {
+	} else if ebiten.IsKeyPressed(ebiten.KeySpace) || len(ebiten.TouchIDs()) != 0 {
 		paused = false
 	}
 	if needsRestart {
